@@ -33,9 +33,11 @@ def add_new_row(follower_name, number, follower_screen_name, follower_id):
     except TypeError:
         print('ERROR\n')
         print(query)
+        send_telegram(f'Twitter Bot Followers: Insert Error\n\n{query}')
     except:
         print('ERROR\n')
         print(query)
+        send_telegram(f'Twitter Bot Followers: Insert Error\n\n{query}')
 
 
 def add_to_lost_gained(insert_date, follower_name, follower_screen_name, follower_id, lost):
@@ -52,9 +54,11 @@ def add_to_lost_gained(insert_date, follower_name, follower_screen_name, followe
     except TypeError:
         print('ERROR\n')
         print(query)
+        send_telegram(f'Twitter Bot Followers: Insert Error\n\n{query}')
     except:
         print('ERROR\n')
         print(query)
+        send_telegram(f'Twitter Bot Followers: Insert Error\n\n{query}')
 
 
 def get_last_row(insert_date):
@@ -104,16 +108,26 @@ def get_followers(user):
     # Get followers from Twitter API.
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
-    api = tweepy.API(auth)
+    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
     fws = []
+    ids = []
 
     try:
-        for page in tweepy.Cursor(api.followers, screen_name=user).pages():
-            fws.extend(page)
-            time.sleep(120)
+        for fid in tweepy.Cursor(api.followers_ids, screen_name=user, count=5000).items():
+            ids.append(fid)
     except:
-        print('Error at get followers')
+        import traceback
+        traceback.print_exc()
+
+    for i in range(0, len(ids), 100):
+        try:
+            chunk = ids[i:i + 100]
+            fws.extend(api.lookup_users(user_ids=chunk))
+        except:
+            import traceback
+            traceback.print_exc()
+            print('Something went wrong, skipping...')
 
     return fws
 
@@ -206,6 +220,7 @@ if __name__ == '__main__':
 
     while True:
         print(f'Executing job {datetime.today()}')
+
         send_telegram(f'Twitter Bot Followers: Executing job {datetime.today()}')
 
         last_value = get_last_row(date.today())
@@ -220,3 +235,4 @@ if __name__ == '__main__':
         print(f'Job finished {datetime.today()}')
         send_telegram(f'Twitter Bot Followers: Job finished {datetime.today()}')
         time.sleep(21600)  # 5 hours
+
