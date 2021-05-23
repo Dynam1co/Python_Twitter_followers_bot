@@ -17,7 +17,9 @@ CONSUMER_KEY, CONSUMER_SECRET, ACCESS_KEY, ACCESS_SECRET = conf.get_twitter_data
 def add_new_row(follower_name, number, follower_screen_name, follower_id):
     # Insert a new rew into the 'followers_history' table.
     follower_name = follower_name.replace("'", '')
+    follower_name = follower_name.replace("%", '')
     follower_screen_name = follower_screen_name.replace("'", '')
+    follower_screen_name = follower_screen_name.replace("%", '')
 
     query = "INSERT INTO followers_history (insert_date,follower_name,number,follower_screen_name,follower_id) "+\
         "VALUES ("+\
@@ -104,6 +106,18 @@ def get_data(insert_date, number):
     return result_set
 
 
+def follower_exists(follower_id, insert_date, number):
+    query = f"SELECT COUNT(*) FROM followers_history WHERE follower_id = '{follower_id}' AND insert_date = '{insert_date}' AND number = {number}"
+
+    result_set = db.execute(query)
+
+    for (r) in result_set:
+        if r[0] > 0:
+            return True
+
+    return False
+
+
 def get_followers(user):
     # Get followers from Twitter API.
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
@@ -145,32 +159,16 @@ def compare_followers(old_number, new_number, insert_date):
 
     for row in old_followers:
         old_id = row[0]
-        found = False
 
-        for new_row in new_followers:
-            new_id = new_row[0]
-
-            if old_id == new_id:
-                found = True
-                break
-
-        if not found:
+        if not follower_exists(old_id, insert_date, new_number):
             print(f"Follower lost: {old_id}")
             follower_name, follower_screen_name, follower_id = get_follower_data(old_id)
             add_to_lost_gained(date.today(), follower_name, follower_screen_name, follower_id, True)
 
     for new_row in new_followers:
         new_id = new_row[0]
-        found = False
 
-        for row in old_followers:
-            old_id = row[0]
-
-            if old_id == new_id:
-                found = True
-                break
-
-        if not found:
+        if not follower_exists(new_id, insert_date, old_number):
             print(f"New follower: {new_id}")
             follower_name, follower_screen_name, follower_id = get_follower_data(new_id)
             add_to_lost_gained(date.today(), follower_name, follower_screen_name, follower_id, False)
