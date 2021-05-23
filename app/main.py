@@ -63,13 +63,12 @@ def add_to_lost_gained(insert_date, follower_name, follower_screen_name, followe
         send_telegram(f'Twitter Bot Followers: Insert Error\n\n{query}')
 
 
-def get_last_row(insert_date):
+def get_last_row():
     # Retrieve the last number inserted in a date inside the 'followers_history'
     query = "" + \
             "SELECT number " + \
             "FROM followers_history " + \
-            "WHERE number >= (SELECT max(number) FROM followers_history " +\
-            "WHERE insert_date = '" + str(insert_date) + "')" +\
+            "WHERE number >= (SELECT max(number) FROM followers_history)" + \
             " LIMIT 1"
 
     result_set = db.execute(query)
@@ -221,7 +220,7 @@ if __name__ == '__main__':
 
         send_telegram(f'Twitter Bot Followers: Executing job {datetime.today()}')
 
-        last_value = get_last_row(date.today())
+        last_value = get_last_row()
         next_value = last_value + 1
 
         fws = get_followers(conf.get_twitter_user())
@@ -229,8 +228,9 @@ if __name__ == '__main__':
 
         if last_value != 0:
             compare_followers(last_value, next_value, date.today())
+            notificate_telegram_followers()
 
         print(f'Job finished {datetime.today()}')
         send_telegram(f'Twitter Bot Followers: Job finished {datetime.today()}')
-        time.sleep(21600)  # 5 hours
 
+        time.sleep(21600)  # 5 hours
