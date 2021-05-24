@@ -105,8 +105,8 @@ def get_data(insert_date, number):
     return result_set
 
 
-def follower_exists(follower_id, insert_date, number):
-    query = f"SELECT COUNT(*) FROM followers_history WHERE follower_id = '{follower_id}' AND insert_date = '{insert_date}' AND number = {number}"
+def follower_exists(follower_id, number):
+    query = f"SELECT COUNT(*) FROM followers_history WHERE follower_id = '{follower_id}' AND number = {number}"
 
     result_set = db.execute(query)
 
@@ -159,7 +159,7 @@ def compare_followers(old_number, new_number, insert_date):
     for row in old_followers:
         old_id = row[0]
 
-        if not follower_exists(old_id, insert_date, new_number):
+        if not follower_exists(old_id, new_number):
             print(f"Follower lost: {old_id}")
             follower_name, follower_screen_name, follower_id = get_follower_data(old_id)
             add_to_lost_gained(date.today(), follower_name, follower_screen_name, follower_id, True)
@@ -167,7 +167,7 @@ def compare_followers(old_number, new_number, insert_date):
     for new_row in new_followers:
         new_id = new_row[0]
 
-        if not follower_exists(new_id, insert_date, old_number):
+        if not follower_exists(new_id, old_number):
             print(f"New follower: {new_id}")
             follower_name, follower_screen_name, follower_id = get_follower_data(new_id)
             add_to_lost_gained(date.today(), follower_name, follower_screen_name, follower_id, False)
